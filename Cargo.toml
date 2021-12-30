@@ -6,4 +6,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-ati-adl-sdk-sys = { path = "ati-adl-sdk-sys" }
+ati_adl_sdk_sys = { path = "ati_adl_sdk_sys" }

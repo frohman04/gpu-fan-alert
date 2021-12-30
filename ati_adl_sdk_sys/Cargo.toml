@@ -1,5 +1,5 @@
 [package]
-name = "ati-adl-sdk-sys"
+name = "ati_adl_sdk_sys"
 version = "0.1.0"
 edition = "2021"
 

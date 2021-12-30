@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ati-adl-sdk-sys"
+name = "ati_adl_sdk_sys"
 version = "0.1.0"
 dependencies = [
  "bindgen",
@@ -144,7 +144,7 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 name = "gpu-fan-alert"
 version = "0.1.0"
 dependencies = [
- "ati-adl-sdk-sys",
+ "ati_adl_sdk_sys",
 ]
 
 [[package]]
