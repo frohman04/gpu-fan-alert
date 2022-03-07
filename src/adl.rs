@@ -7,6 +7,8 @@ use libloading::{Library, Symbol};
 use std::mem;
 use std::os::raw::{c_char, c_int, c_void};
 
+pub const ATI_VENDOR_ID: i32 = 1002;
+
 pub struct Adl {
     lib: Library,
 }
@@ -146,6 +148,28 @@ impl Adl {
             let mut status = Box::new(-1i32);
             let raw_stat = func(adapter_index, status.as_mut());
             AdlStatus::toResultWithValue(raw_stat, || AdlBool::from_int(*status).unwrap().into())
+        }
+    }
+
+    /// Function to get the unique identifier of an adapter.
+    ///
+    /// This function retrieves the unique identifier of a specified adapter.  The adapter ID is a
+    /// unique value and will be used to determine what other controllers share the same adapter.
+    /// The desktop will use this to find which HDCs are associated with an adapter.
+    ///
+    /// Parameters:
+    ///   adapter_index: The ADL index handle of the desired adapter
+    ///
+    /// Supported Platforms: Linux and Windows(XP, Vista and above); 32bit and 64bit
+    pub fn ADL_Adapter_ID_Get(&self, adapter_index: i32) -> AdlResultWithValue<i32> {
+        unsafe {
+            let func: Symbol<unsafe extern "C" fn(c_int, *mut c_int) -> c_int> = self
+                .lib
+                .get(b"ADL_Adapter_ID_Get")
+                .expect("Unable to load function ADL_Adapter_ID_Get");
+            let mut adapter_id = Box::new(-1i32);
+            let raw_stat = func(adapter_index, adapter_id.as_mut());
+            AdlStatus::toResultWithValue(raw_stat, || *adapter_id)
         }
     }
 }
