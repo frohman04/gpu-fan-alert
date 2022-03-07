@@ -5,6 +5,7 @@ extern crate libloading;
 
 mod adl;
 
+use crate::adl::AdlAdapterInfo;
 use adl::Adl;
 
 fn main() {
@@ -19,12 +20,23 @@ fn main() {
     println!("Found {} adapters", num_adapters);
 
     if num_adapters > 0 {
-        let infos = match adl.ADL_Adapter_AdapterInfo_Get() {
-            Ok((_, infos)) => infos,
+        let active_adapters: Vec<AdlAdapterInfo> = match adl.ADL_Adapter_AdapterInfo_Get() {
+            Ok((_, infos)) => infos
+                .into_iter()
+                .filter(
+                    |adapter| match adl.ADL_Adapter_Active_Get(adapter.adapter_index) {
+                        Ok((_, is_active)) => is_active,
+                        Err(s) => panic!(
+                            "Unable to get active status for adapter {:?}: {:?}",
+                            adapter.adapter_index, s
+                        ),
+                    },
+                )
+                .collect(),
             Err(s) => panic!("Unable to get adapter infos: {:?}", s),
         };
-        for info in infos {
-            println!("{:?}", info);
+        for adapter in active_adapters {
+            println!("{:?}", adapter);
         }
     }
 

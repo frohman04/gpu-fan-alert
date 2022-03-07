@@ -127,6 +127,43 @@ impl Adl {
             })
         }
     }
+
+    /// Function to determine if the adapter is active or not.
+    ///
+    /// The function is used to check if the adapter associated with iAdapterIndex is active. Logic
+    /// is different for Windows and Linux!
+    ///
+    /// Parameters:
+    ///   adapter_index: The ADL index handle of the desired adapter
+    ///
+    /// Supported Platforms: Linux and Windows(XP, Vista and above); 32bit and 64bit
+    pub fn ADL_Adapter_Active_Get(&self, adapter_index: i32) -> AdlResultWithValue<bool> {
+        unsafe {
+            let func: Symbol<unsafe extern "C" fn(c_int, *mut c_int) -> c_int> = self
+                .lib
+                .get(b"ADL_Adapter_Active_Get")
+                .expect("Unable to load function ADL_Adapter_Active_Get");
+            let mut status = Box::new(-1i32);
+            let raw_stat = func(adapter_index, status.as_mut());
+            AdlStatus::toResultWithValue(raw_stat, || AdlBool::from_int(*status).unwrap().into())
+        }
+    }
+}
+
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, IntEnum)]
+pub enum AdlBool {
+    True = 1,
+    False = 0,
+}
+
+impl From<AdlBool> for bool {
+    fn from(adl_bool: AdlBool) -> Self {
+        match adl_bool {
+            AdlBool::True => true,
+            AdlBool::False => false,
+        }
+    }
 }
 
 #[repr(i32)]
