@@ -6,6 +6,7 @@ extern crate libc;
 extern crate libloading;
 extern crate strum;
 extern crate strum_macros;
+extern crate time;
 
 mod adl;
 mod sound;
@@ -55,10 +56,15 @@ fn main() -> anyhow::Result<()> {
             active_adapters.len(),
             active_adapters
                 .iter()
-                .map(|a| a.adapter_index)
-                .collect::<Vec<i32>>()
+                .map(|a| a.adapter_name.clone())
+                .collect::<Vec<String>>()
         );
         for adapter in active_adapters {
+            println!(
+                "{}",
+                time::OffsetDateTime::now_local()?
+                    .format(&time::format_description::well_known::Rfc2822)?
+            );
             match adl.ADL2_New_QueryPMLogData_Get(context, adapter.adapter_index) {
                 Ok((_, sensors)) => {
                     let fan_speed_rpm = sensors.get(&AdlSensorType::PMLOG_FAN_RPM).unwrap().value;
@@ -71,16 +77,16 @@ fn main() -> anyhow::Result<()> {
                         .unwrap()
                         .value;
                     println!(
-                        "Fan speed (RPM): {:?} ({:?}%)",
+                        "  Fan speed (RPM): {:?} ({:?}%)",
                         fan_speed_rpm, fan_speed_pct
                     );
-                    println!("Temp (deg C):    {:?}", temp_c);
+                    println!("  Temp (deg C):    {:?}", temp_c);
 
                     if fan_speed_rpm == 65535 {
                         sound::alert()?;
                     }
                 }
-                Err(s) => panic!(
+                Err(s) => eprintln!(
                     "Unable to get sensors for adapter {:?}: {:?}",
                     adapter.adapter_index, s
                 ),
