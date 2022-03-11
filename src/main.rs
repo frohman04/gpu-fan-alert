@@ -1,5 +1,7 @@
 extern crate anyhow;
 extern crate cpal;
+extern crate crossbeam_channel;
+extern crate ctrlc;
 #[macro_use]
 extern crate int_enum;
 extern crate libc;
@@ -13,6 +15,8 @@ mod sound;
 
 use crate::adl::{Adl, ADL_CONTEXT_HANDLE, ATI_VENDOR_ID};
 use crate::adl::{AdlAdapterInfo, AdlSensorType};
+use crossbeam_channel::{bounded, select, tick, Receiver};
+use std::time::Duration;
 
 fn main() -> anyhow::Result<()> {
     let adl = Adl::default();
@@ -40,7 +44,31 @@ fn main() -> anyhow::Result<()> {
                 .collect::<Vec<String>>()
         );
 
+        fn ctrl_channel() -> Result<Receiver<()>, ctrlc::Error> {
+            let (sender, receiver) = bounded(100);
+            ctrlc::set_handler(move || {
+                let _ = sender.send(());
+            })?;
+
+            Ok(receiver)
+        }
+
+        let ctrl_c_events = ctrl_channel()?;
+        let ticks = tick(Duration::from_secs(2));
+
         check_temps(&adl, context, &active_adapters)?;
+        loop {
+            select! {
+                recv(ticks) -> _ => {
+                    check_temps(&adl, context, &active_adapters)?;
+                }
+                recv(ctrl_c_events) -> _ => {
+                    println!();
+                    println!("Exiting!");
+                    break;
+                }
+            }
+        }
     }
 
     adl.ADL2_Main_Control_Destroy(context)
