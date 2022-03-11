@@ -11,7 +11,7 @@ extern crate time;
 mod adl;
 mod sound;
 
-use crate::adl::{Adl, ATI_VENDOR_ID};
+use crate::adl::{Adl, ADL_CONTEXT_HANDLE, ATI_VENDOR_ID};
 use crate::adl::{AdlAdapterInfo, AdlSensorType};
 
 fn main() -> anyhow::Result<()> {
@@ -30,27 +30,7 @@ fn main() -> anyhow::Result<()> {
     println!("Found {} adapters", num_adapters);
 
     if num_adapters > 0 {
-        let active_adapters: Vec<AdlAdapterInfo> = match adl.ADL_Adapter_AdapterInfo_Get() {
-            Ok((_, infos)) => infos
-                .into_iter()
-                .filter_map(
-                    |adapter| match adl.ADL_Adapter_Active_Get(adapter.adapter_index) {
-                        Ok((_, is_active)) => {
-                            if is_active && adapter.vendor_id == ATI_VENDOR_ID {
-                                Some(adapter)
-                            } else {
-                                None
-                            }
-                        }
-                        Err(s) => panic!(
-                            "Unable to get active status for adapter {:?}: {:?}",
-                            adapter.adapter_index, s
-                        ),
-                    },
-                )
-                .collect(),
-            Err(s) => panic!("Unable to get adapter infos: {:?}", s),
-        };
+        let active_adapters = get_active_adapters(&adl);
         println!(
             "Found {:?} active adapters from ATI/AMD: {:?}",
             active_adapters.len(),
@@ -59,45 +39,80 @@ fn main() -> anyhow::Result<()> {
                 .map(|a| a.adapter_name.clone())
                 .collect::<Vec<String>>()
         );
-        for adapter in active_adapters {
-            println!(
-                "{}",
-                time::OffsetDateTime::now_local()?
-                    .format(&time::format_description::well_known::Rfc2822)?
-            );
-            match adl.ADL2_New_QueryPMLogData_Get(context, adapter.adapter_index) {
-                Ok((_, sensors)) => {
-                    let fan_speed_rpm = sensors.get(&AdlSensorType::PMLOG_FAN_RPM).unwrap().value;
-                    let fan_speed_pct = sensors
-                        .get(&AdlSensorType::PMLOG_FAN_PERCENTAGE)
-                        .unwrap()
-                        .value;
-                    let temp_c = sensors
-                        .get(&AdlSensorType::PMLOG_TEMPERATURE_HOTSPOT)
-                        .unwrap()
-                        .value;
-                    println!(
-                        "  Fan speed (RPM): {:?} ({:?}%)",
-                        fan_speed_rpm, fan_speed_pct
-                    );
-                    println!("  Temp (deg C):    {:?}", temp_c);
 
-                    if fan_speed_rpm == 65535 {
-                        sound::alert()?;
-                    }
-                }
-                Err(s) => eprintln!(
-                    "Unable to get sensors for adapter {:?}: {:?}",
-                    adapter.adapter_index, s
-                ),
-            }
-        }
+        check_temps(&adl, context, &active_adapters)?;
     }
 
     adl.ADL2_Main_Control_Destroy(context)
         .expect("Unable to destroy ADL2");
     adl.ADL_Main_Control_Destroy()
         .expect("Unable to destroy ADL");
+
+    Ok(())
+}
+
+fn get_active_adapters(adl: &Adl) -> Vec<AdlAdapterInfo> {
+    match adl.ADL_Adapter_AdapterInfo_Get() {
+        Ok((_, infos)) => infos
+            .into_iter()
+            .filter_map(
+                |adapter| match adl.ADL_Adapter_Active_Get(adapter.adapter_index) {
+                    Ok((_, is_active)) => {
+                        if is_active && adapter.vendor_id == ATI_VENDOR_ID {
+                            Some(adapter)
+                        } else {
+                            None
+                        }
+                    }
+                    Err(s) => panic!(
+                        "Unable to get active status for adapter {:?}: {:?}",
+                        adapter.adapter_index, s
+                    ),
+                },
+            )
+            .collect(),
+        Err(s) => panic!("Unable to get adapter infos: {:?}", s),
+    }
+}
+
+fn check_temps(
+    adl: &Adl,
+    context: ADL_CONTEXT_HANDLE,
+    adapters: &[AdlAdapterInfo],
+) -> anyhow::Result<()> {
+    for adapter in adapters {
+        println!(
+            "{}",
+            time::OffsetDateTime::now_local()?
+                .format(&time::format_description::well_known::Rfc2822)?
+        );
+        match adl.ADL2_New_QueryPMLogData_Get(context, adapter.adapter_index) {
+            Ok((_, sensors)) => {
+                let fan_speed_rpm = sensors.get(&AdlSensorType::PMLOG_FAN_RPM).unwrap().value;
+                let fan_speed_pct = sensors
+                    .get(&AdlSensorType::PMLOG_FAN_PERCENTAGE)
+                    .unwrap()
+                    .value;
+                let temp_c = sensors
+                    .get(&AdlSensorType::PMLOG_TEMPERATURE_HOTSPOT)
+                    .unwrap()
+                    .value;
+                println!(
+                    "  Fan speed (RPM): {:?} ({:?}%)",
+                    fan_speed_rpm, fan_speed_pct
+                );
+                println!("  Temp (deg C):    {:?}", temp_c);
+
+                if fan_speed_rpm == 65535 {
+                    sound::alert()?;
+                }
+            }
+            Err(s) => eprintln!(
+                "Unable to get sensors for adapter {:?}: {:?}",
+                adapter.adapter_index, s
+            ),
+        }
+    }
 
     Ok(())
 }
