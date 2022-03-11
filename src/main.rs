@@ -1,3 +1,5 @@
+extern crate anyhow;
+extern crate cpal;
 #[macro_use]
 extern crate int_enum;
 extern crate libc;
@@ -6,11 +8,12 @@ extern crate strum;
 extern crate strum_macros;
 
 mod adl;
+mod sound;
 
+use crate::adl::{Adl, ATI_VENDOR_ID};
 use crate::adl::{AdlAdapterInfo, AdlSensorType};
-use adl::{Adl, ATI_VENDOR_ID};
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let adl = Adl::default();
     adl.ADL_Main_Control_Create(1)
         .expect("Unable to create ADL");
@@ -61,21 +64,24 @@ fn main() {
         for adapter in active_adapters {
             match adl.ADL2_New_QueryPMLogData_Get(context, adapter.1.adapter_index) {
                 Ok((_, sensors)) => {
+                    let fan_speed_rpm = sensors.get(&AdlSensorType::PMLOG_FAN_RPM).unwrap().value;
+                    let fan_speed_pct = sensors
+                        .get(&AdlSensorType::PMLOG_FAN_PERCENTAGE)
+                        .unwrap()
+                        .value;
+                    let temp_c = sensors
+                        .get(&AdlSensorType::PMLOG_TEMPERATURE_HOTSPOT)
+                        .unwrap()
+                        .value;
                     println!(
                         "Fan speed (RPM): {:?} ({:?}%)",
-                        sensors.get(&AdlSensorType::PMLOG_FAN_RPM).unwrap().value,
-                        sensors
-                            .get(&AdlSensorType::PMLOG_FAN_PERCENTAGE)
-                            .unwrap()
-                            .value
+                        fan_speed_rpm, fan_speed_pct
                     );
-                    println!(
-                        "Temp (deg C):    {:?}",
-                        sensors
-                            .get(&AdlSensorType::PMLOG_TEMPERATURE_HOTSPOT)
-                            .unwrap()
-                            .value
-                    );
+                    println!("Temp (deg C):    {:?}", temp_c);
+
+                    if fan_speed_rpm == 65535 {
+                        sound::alert()?;
+                    }
                 }
                 Err(s) => panic!(
                     "Unable to get sensors for adapter {:?}: {:?}",
@@ -89,4 +95,6 @@ fn main() {
         .expect("Unable to destroy ADL2");
     adl.ADL_Main_Control_Destroy()
         .expect("Unable to destroy ADL");
+
+    Ok(())
 }
