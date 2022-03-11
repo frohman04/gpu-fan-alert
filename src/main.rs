@@ -29,20 +29,14 @@ fn main() -> anyhow::Result<()> {
     println!("Found {} adapters", num_adapters);
 
     if num_adapters > 0 {
-        let active_adapters: Vec<(i32, AdlAdapterInfo)> = match adl.ADL_Adapter_AdapterInfo_Get() {
+        let active_adapters: Vec<AdlAdapterInfo> = match adl.ADL_Adapter_AdapterInfo_Get() {
             Ok((_, infos)) => infos
                 .into_iter()
                 .filter_map(
                     |adapter| match adl.ADL_Adapter_Active_Get(adapter.adapter_index) {
                         Ok((_, is_active)) => {
                             if is_active && adapter.vendor_id == ATI_VENDOR_ID {
-                                match adl.ADL_Adapter_ID_Get(adapter.adapter_index) {
-                                    Ok((_, adapter_id)) => Some((adapter_id, adapter)),
-                                    Err(s) => panic!(
-                                        "Unable to get adapter id for adapter {:?}: {:?}",
-                                        adapter.adapter_index, s
-                                    ),
-                                }
+                                Some(adapter)
                             } else {
                                 None
                             }
@@ -59,10 +53,13 @@ fn main() -> anyhow::Result<()> {
         println!(
             "Found {:?} active adapters from ATI/AMD: {:?}",
             active_adapters.len(),
-            active_adapters.iter().map(|a| a.0).collect::<Vec<i32>>()
+            active_adapters
+                .iter()
+                .map(|a| a.adapter_index)
+                .collect::<Vec<i32>>()
         );
         for adapter in active_adapters {
-            match adl.ADL2_New_QueryPMLogData_Get(context, adapter.1.adapter_index) {
+            match adl.ADL2_New_QueryPMLogData_Get(context, adapter.adapter_index) {
                 Ok((_, sensors)) => {
                     let fan_speed_rpm = sensors.get(&AdlSensorType::PMLOG_FAN_RPM).unwrap().value;
                     let fan_speed_pct = sensors
@@ -85,7 +82,7 @@ fn main() -> anyhow::Result<()> {
                 }
                 Err(s) => panic!(
                     "Unable to get sensors for adapter {:?}: {:?}",
-                    adapter.1.adapter_index, s
+                    adapter.adapter_index, s
                 ),
             }
         }
