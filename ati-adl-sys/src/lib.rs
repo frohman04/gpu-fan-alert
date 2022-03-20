@@ -2,6 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
+#[macro_use]
+extern crate int_enum;
+extern crate libc;
+extern crate libloading;
+extern crate strum;
+extern crate strum_macros;
+
 use int_enum::IntEnum;
 use libloading::{Library, Symbol};
 use std::collections::HashMap;

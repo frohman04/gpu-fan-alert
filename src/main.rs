@@ -1,22 +1,18 @@
+#![forbid(unsafe_code)]
+
 extern crate anyhow;
+extern crate ati_adl_sys;
 extern crate cpal;
 extern crate crossbeam_channel;
 extern crate ctrlc;
 #[macro_use]
-extern crate int_enum;
-extern crate libc;
-extern crate libloading;
-#[macro_use]
 extern crate log;
 extern crate simplelog;
-extern crate strum;
-extern crate strum_macros;
 
-mod adl;
 mod sound;
 
-use crate::adl::{Adl, ADL_CONTEXT_HANDLE, ATI_VENDOR_ID};
-use crate::adl::{AdlAdapterInfo, AdlSensorType};
+use ati_adl_sys::{Adl, ADL_CONTEXT_HANDLE, ATI_VENDOR_ID};
+use ati_adl_sys::{AdlAdapterInfo, AdlSensorType};
 use crossbeam_channel::{bounded, select, tick, Receiver};
 use simplelog::{
     ColorChoice, CombinedLogger, ConfigBuilder, LevelFilter, TermLogger, TerminalMode,

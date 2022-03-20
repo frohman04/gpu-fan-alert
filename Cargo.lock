@@ -31,6 +31,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4361135be9122e0870de935d7c439aef945b9f9ddd4199a553b5270b49c82a27"
 
 [[package]]
+name = "ati-adl-sys"
+version = "0.1.0"
+dependencies = [
+ "int-enum",
+ "libc",
+ "libloading",
+ "strum",
+ "strum_macros",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -275,16 +286,12 @@ name = "gpu-fan-alert"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "ati-adl-sys",
  "cpal",
  "crossbeam-channel",
  "ctrlc",
- "int-enum",
- "libc",
- "libloading",
  "log",
  "simplelog",
- "strum",
- "strum_macros",
 ]
 
 [[package]]
