@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = "~1.0.56"
 cpal = "~0.13.5"
-crossbeam-channel = "~0.5.3"
+crossbeam-channel = "~0.5.4"
 ctrlc = "~3.2.1"
 log = "~0.4.14"
 simplelog = "~0.11.2"
