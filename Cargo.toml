@@ -13,5 +13,8 @@ ctrlc = "~3.2.1"
 log = "~0.4.16"
 simplelog = "~0.11.2"
 
+[build-dependencies]
+windres = "~0.2.2"
+
 [dependencies.ati-adl-sys]
 path = "ati-adl-sys"
