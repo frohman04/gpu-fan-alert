@@ -10,8 +10,8 @@ anyhow = "~1.0.56"
 cpal = "~0.13.5"
 crossbeam-channel = "~0.5.4"
 ctrlc = "~3.2.1"
+env_logger = "~0.9.0"
 log = "~0.4.16"
-simplelog = "~0.11.2"
 
 [build-dependencies]
 windres = "~0.2.2"

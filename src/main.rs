@@ -5,31 +5,21 @@ extern crate ati_adl_sys;
 extern crate cpal;
 extern crate crossbeam_channel;
 extern crate ctrlc;
+extern crate env_logger;
 #[macro_use]
 extern crate log;
-extern crate simplelog;
 
 mod gpu;
 mod sound;
 
 use crossbeam_channel::{bounded, select, tick, Receiver};
+use env_logger::Env;
 use gpu::Gpu;
-use simplelog::{
-    ColorChoice, CombinedLogger, ConfigBuilder, LevelFilter, TermLogger, TerminalMode,
-};
 use std::time::Duration;
 
 fn main() -> anyhow::Result<()> {
-    CombinedLogger::init(vec![TermLogger::new(
-        LevelFilter::Info,
-        ConfigBuilder::default()
-            .set_time_format_str("%Y-%m-%d %H:%M:%S%z")
-            .set_time_to_local(true)
-            .build(),
-        TerminalMode::Stderr,
-        ColorChoice::Auto,
-    )])
-    .unwrap();
+    let env = Env::default().filter_or("MY_LOG_LEVEL", "info");
+    env_logger::init_from_env(env);
 
     let gpu = Gpu::get_active_gpu();
 
