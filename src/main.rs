@@ -65,6 +65,17 @@ fn check_temps(gpu: &mut Gpu) -> anyhow::Result<()> {
 
                 if temps.fan_speed_rpm == 65535 {
                     gpu.reset_fan_throttle();
+                }
+            }
+            Err(s) => eprintln!("Unable to get sensors for adapter {:?}: {:?}", adapter, s),
+        }
+    }
+
+    // if any adapters still have an invalid speed, then alert audibly
+    for (adapter, result) in gpu.get_temps() {
+        match result {
+            Ok(temps) => {
+                if temps.fan_speed_rpm == 65535 {
                     sound::alert()?;
                 }
             }
