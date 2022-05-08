@@ -7,6 +7,8 @@ extern crate crossbeam_channel;
 extern crate ctrlc;
 extern crate env_logger;
 #[macro_use]
+extern crate int_enum;
+#[macro_use]
 extern crate log;
 extern crate sysinfo;
 
@@ -22,7 +24,7 @@ fn main() -> anyhow::Result<()> {
     let env = Env::default().filter_or("MY_LOG_LEVEL", "info");
     env_logger::init_from_env(env);
 
-    let gpu = Gpu::get_active_gpu();
+    let mut gpu = Gpu::get_active_gpu();
 
     fn ctrl_channel() -> Result<Receiver<()>, ctrlc::Error> {
         let (sender, receiver) = bounded(100);
@@ -36,11 +38,11 @@ fn main() -> anyhow::Result<()> {
     let ctrl_c_events = ctrl_channel()?;
     let ticks = tick(Duration::from_secs(2));
 
-    check_temps(&gpu)?;
+    check_temps(&mut gpu)?;
     loop {
         select! {
             recv(ticks) -> _ => {
-                check_temps(&gpu)?;
+                check_temps(&mut gpu)?;
             }
             recv(ctrl_c_events) -> _ => {
                 info!("Exiting!");
@@ -52,7 +54,7 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn check_temps(gpu: &Gpu) -> anyhow::Result<()> {
+fn check_temps(gpu: &mut Gpu) -> anyhow::Result<()> {
     for (adapter, result) in gpu.get_temps() {
         match result {
             Ok(temps) => {
@@ -62,6 +64,7 @@ fn check_temps(gpu: &Gpu) -> anyhow::Result<()> {
                 );
 
                 if temps.fan_speed_rpm == 65535 {
+                    gpu.reset_fan_throttle();
                     sound::alert()?;
                 }
             }

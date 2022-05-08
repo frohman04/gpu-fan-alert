@@ -359,6 +359,7 @@ dependencies = [
  "crossbeam-channel",
  "ctrlc",
  "env_logger",
+ "int-enum",
  "log",
  "sysinfo",
  "windres",
