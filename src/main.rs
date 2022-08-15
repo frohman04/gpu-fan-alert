@@ -55,6 +55,8 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn check_temps(gpu: &mut Gpu) -> anyhow::Result<()> {
+    gpu.ensure_asrock_tweak_tool_running();
+
     for (adapter, result) in gpu.get_temps() {
         match result {
             Ok(temps) => {

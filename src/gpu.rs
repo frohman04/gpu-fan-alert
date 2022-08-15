@@ -112,6 +112,25 @@ impl Gpu {
             .collect()
     }
 
+    pub fn ensure_asrock_tweak_tool_running(&mut self) {
+        self.system.refresh_processes();
+        if self
+            .system
+            .processes()
+            .iter()
+            .filter(|(_pid, proc)| !proc.cmd().is_empty() && proc.cmd()[0].contains("AsrPGT"))
+            .peekable()
+            .peek()
+            .is_none()
+        {
+            info!(
+                "Unable to find running ASRock Tweak Tool process.  \
+                Restarting and resetting to known state"
+            );
+            self.reset_fan_throttle();
+        }
+    }
+
     fn kill_asrock_tweak_tool(&mut self) {
         self.system.refresh_processes();
         for (pid, proc) in self
