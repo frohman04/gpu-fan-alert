@@ -15,8 +15,8 @@ int-enum = "~0.4.0"
 log = "~0.4.17"
 sysinfo = "~0.25.1"
 
-[build-dependencies]
-windres = "~0.2.2"
+[target.'cfg(windows)'.build-dependencies]
+winres = "~0.1.12"
 
 [dependencies.ati-adl-sys]
 path = "ati-adl-sys"
