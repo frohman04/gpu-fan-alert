@@ -18,13 +18,21 @@ mod sound;
 use crossbeam_channel::{bounded, select, tick, Receiver};
 use gpu::Gpu;
 use std::time::Duration;
-use tracing::{info, info_span, Level};
-use tracing_subscriber::FmtSubscriber;
+use tracing::{info, info_span};
+use tracing_subscriber::prelude::*;
+use tracing_subscriber::{fmt, Registry};
 
 fn main() -> anyhow::Result<()> {
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::INFO)
-        .finish();
+    let file_appender = tracing_appender::rolling::hourly("./logs", "log");
+    let (file_writer, _guard) = tracing_appender::non_blocking(file_appender);
+
+    let subscriber = Registry::default()
+        .with(
+            fmt::Layer::default()
+                .with_ansi(false)
+                .with_writer(file_writer),
+        )
+        .with(fmt::Layer::default().with_writer(std::io::stderr));
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     let mut gpu = Gpu::get_active_gpu();
