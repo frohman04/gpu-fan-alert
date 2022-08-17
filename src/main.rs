@@ -18,7 +18,7 @@ mod sound;
 use crossbeam_channel::{bounded, select, tick, Receiver};
 use gpu::Gpu;
 use std::time::Duration;
-use tracing::{info, Level};
+use tracing::{info, info_span, Level};
 use tracing_subscriber::FmtSubscriber;
 
 fn main() -> anyhow::Result<()> {
@@ -58,14 +58,22 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn check_temps(gpu: &mut Gpu) -> anyhow::Result<()> {
+    let span = info_span!("Checking temps");
+    let _guard = span.enter();
+
     gpu.ensure_asrock_tweak_tool_running();
 
     for (adapter, result) in gpu.get_temps() {
         match result {
             Ok(temps) => {
                 info!(
+                    fan_speed_rpm = temps.fan_speed_rpm,
+                    fan_speed_pct = temps.fan_speed_pct,
+                    temp_c = temps.temp_c,
                     "Fan speed: {:>5?} RPM ({:>4?}% max) | Temp: {:>2?} \u{00b0}C",
-                    temps.fan_speed_rpm, temps.fan_speed_pct, temps.temp_c
+                    temps.fan_speed_rpm,
+                    temps.fan_speed_pct,
+                    temps.temp_c,
                 );
 
                 if temps.fan_speed_rpm == 65535 {
