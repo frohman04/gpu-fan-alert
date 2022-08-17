@@ -5,24 +5,27 @@ extern crate ati_adl_sys;
 extern crate cpal;
 extern crate crossbeam_channel;
 extern crate ctrlc;
-extern crate env_logger;
 #[macro_use]
 extern crate int_enum;
-#[macro_use]
-extern crate log;
 extern crate sysinfo;
+extern crate tracing;
+extern crate tracing_appender;
+extern crate tracing_subscriber;
 
 mod gpu;
 mod sound;
 
 use crossbeam_channel::{bounded, select, tick, Receiver};
-use env_logger::Env;
 use gpu::Gpu;
 use std::time::Duration;
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
 
 fn main() -> anyhow::Result<()> {
-    let env = Env::default().filter_or("MY_LOG_LEVEL", "info");
-    env_logger::init_from_env(env);
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::INFO)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     let mut gpu = Gpu::get_active_gpu();
 

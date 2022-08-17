@@ -3,6 +3,7 @@ use ati_adl_sys::{
 };
 use int_enum::IntEnum;
 use sysinfo::{ProcessExt, System, SystemExt};
+use tracing::{info, warn};
 
 use std::fs;
 use std::process::Command;
