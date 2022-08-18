@@ -3,6 +3,7 @@ use ati_adl_sys::{
 };
 use int_enum::IntEnum;
 use sysinfo::{ProcessExt, System, SystemExt};
+use tracing::{info, info_span, warn};
 
 use std::fs;
 use std::process::Command;
@@ -16,6 +17,9 @@ pub struct Gpu {
 
 impl Gpu {
     pub fn get_active_gpu() -> Self {
+        let span = info_span!("Getting active GPU");
+        let _guard = span.enter();
+
         let adl = Adl::default();
 
         adl.ADL_Main_Control_Create(1)
@@ -29,11 +33,15 @@ impl Gpu {
             Ok((_, num)) => num,
             Err(s) => panic!("Unable to get number of adapters: {:?}", s),
         };
-        info!("Found {} adapters", num_adapters);
+        info!(num_adapters, "Found {} adapters", num_adapters);
 
         if num_adapters > 0 {
             let active_adapters = Self::get_active_adapters(&adl);
             info!(
+                ati_amd_adapters = ?active_adapters
+                    .iter()
+                    .map(|a| a.adapter_name.clone())
+                    .collect::<Vec<String>>(),
                 "Found {:?} active adapters from ATI/AMD: {:?}",
                 active_adapters.len(),
                 active_adapters
@@ -113,6 +121,9 @@ impl Gpu {
     }
 
     pub fn ensure_asrock_tweak_tool_running(&mut self) {
+        let span = info_span!("Ensure ASRock Tweak Tool running");
+        let _guard = span.enter();
+
         self.system.refresh_processes();
         if self
             .system
@@ -132,6 +143,9 @@ impl Gpu {
     }
 
     fn kill_asrock_tweak_tool(&mut self) {
+        let span = info_span!("Killing ASRock Tweak Tool");
+        let _guard = span.enter();
+
         self.system.refresh_processes();
         for (pid, proc) in self
             .system
@@ -139,7 +153,7 @@ impl Gpu {
             .iter()
             .filter(|(_pid, proc)| !proc.cmd().is_empty() && proc.cmd()[0].contains("AsrPGT"))
         {
-            info!("Killing ASRock Tweak Tool (process {})", pid);
+            info!(?pid, "Killing ASRock Tweak Tool (process {})", pid);
             if !proc.kill() {
                 warn!("Unable to kill process!");
             }
@@ -147,6 +161,10 @@ impl Gpu {
     }
 
     fn set_fan_throttle(&self, fan_throttle: FanThrottle) {
+        let span = info_span!("Setting fan throttle");
+        let _guard = span.enter();
+        info!(?fan_throttle, "Setting fan throttle: {:?}", fan_throttle);
+
         let file_name = "C:\\Program Files (x86)\\ASRock Utility\\ASRPGT\\Bin\\AsrPGT.ini";
 
         let curr_file_contents = fs::read_to_string(file_name)
@@ -169,6 +187,9 @@ impl Gpu {
     }
 
     fn launch_asrock_tweak_tool(&self) {
+        let span = info_span!("Launching ASRock Tweak Tool");
+        let _guard = span.enter();
+
         Command::new("C:\\Program Files (x86)\\ASRock Utility\\ASRPGT\\Bin\\AsrPGT.exe")
             .spawn()
             .expect("Unable to launch ASRock Tweak Tool");
@@ -178,12 +199,13 @@ impl Gpu {
     }
 
     pub fn reset_fan_throttle(&mut self) {
+        let span = info_span!("Resetting fan throttle");
+        let _guard = span.enter();
+
         self.kill_asrock_tweak_tool();
-        info!("Changing to fixed fan throttle");
         self.set_fan_throttle(FanThrottle::Fixed);
         self.launch_asrock_tweak_tool();
         self.kill_asrock_tweak_tool();
-        info!("Changing back to smart fan throttle");
         self.set_fan_throttle(FanThrottle::Smart);
         self.launch_asrock_tweak_tool();
     }

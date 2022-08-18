@@ -5,24 +5,35 @@ extern crate ati_adl_sys;
 extern crate cpal;
 extern crate crossbeam_channel;
 extern crate ctrlc;
-extern crate env_logger;
 #[macro_use]
 extern crate int_enum;
-#[macro_use]
-extern crate log;
 extern crate sysinfo;
+extern crate tracing;
+extern crate tracing_appender;
+extern crate tracing_subscriber;
 
 mod gpu;
 mod sound;
 
 use crossbeam_channel::{bounded, select, tick, Receiver};
-use env_logger::Env;
 use gpu::Gpu;
 use std::time::Duration;
+use tracing::{info, info_span};
+use tracing_subscriber::prelude::*;
+use tracing_subscriber::{fmt, Registry};
 
 fn main() -> anyhow::Result<()> {
-    let env = Env::default().filter_or("MY_LOG_LEVEL", "info");
-    env_logger::init_from_env(env);
+    let file_appender = tracing_appender::rolling::hourly("./logs", "log");
+    let (file_writer, _guard) = tracing_appender::non_blocking(file_appender);
+
+    let subscriber = Registry::default()
+        .with(
+            fmt::Layer::default()
+                .with_ansi(false)
+                .with_writer(file_writer),
+        )
+        .with(fmt::Layer::default().with_writer(std::io::stderr));
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     let mut gpu = Gpu::get_active_gpu();
 
@@ -55,14 +66,22 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn check_temps(gpu: &mut Gpu) -> anyhow::Result<()> {
+    let span = info_span!("Checking temps");
+    let _guard = span.enter();
+
     gpu.ensure_asrock_tweak_tool_running();
 
     for (adapter, result) in gpu.get_temps() {
         match result {
             Ok(temps) => {
                 info!(
+                    fan_speed_rpm = temps.fan_speed_rpm,
+                    fan_speed_pct = temps.fan_speed_pct,
+                    temp_c = temps.temp_c,
                     "Fan speed: {:>5?} RPM ({:>4?}% max) | Temp: {:>2?} \u{00b0}C",
-                    temps.fan_speed_rpm, temps.fan_speed_pct, temps.temp_c
+                    temps.fan_speed_rpm,
+                    temps.fan_speed_pct,
+                    temps.temp_c,
                 );
 
                 if temps.fan_speed_rpm == 65535 {

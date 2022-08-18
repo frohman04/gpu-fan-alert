@@ -10,10 +10,11 @@ anyhow = "~1.0.62"
 cpal = "~0.13.5"
 crossbeam-channel = "~0.5.6"
 ctrlc = "~3.2.3"
-env_logger = "~0.9.0"
 int-enum = "~0.4.0"
-log = "~0.4.17"
 sysinfo = "~0.25.1"
+tracing = "~0.1.36"
+tracing-appender = "~0.2.2"
+tracing-subscriber = "~0.3.15"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "~0.1.12"
