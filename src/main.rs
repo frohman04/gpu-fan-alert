@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+extern crate ansi_term;
 extern crate anyhow;
 extern crate ati_adl_sys;
 extern crate cpal;
@@ -23,6 +24,8 @@ use tracing_subscriber::prelude::*;
 use tracing_subscriber::{fmt, Registry};
 
 fn main() -> anyhow::Result<()> {
+    let ansi_enabled = ansi_term::enable_ansi_support().map_or(false, |()| true);
+
     let file_appender = tracing_appender::rolling::hourly("./logs", "log");
     let (file_writer, _guard) = tracing_appender::non_blocking(file_appender);
 
@@ -32,7 +35,11 @@ fn main() -> anyhow::Result<()> {
                 .with_ansi(false)
                 .with_writer(file_writer),
         )
-        .with(fmt::Layer::default().with_writer(std::io::stderr));
+        .with(
+            fmt::Layer::default()
+                .with_ansi(ansi_enabled)
+                .with_writer(std::io::stderr),
+        );
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     let mut gpu = Gpu::get_active_gpu();

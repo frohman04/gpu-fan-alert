@@ -6,6 +6,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+ansi_term = "~0.12.1"
 anyhow = "~1.0.62"
 cpal = "~0.13.5"
 crossbeam-channel = "~0.5.6"
