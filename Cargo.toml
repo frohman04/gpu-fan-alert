@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 ansi_term = "~0.12.1"
 anyhow = "~1.0.62"
-cpal = "~0.13.5"
+cpal = "~0.14.0"
 crossbeam-channel = "~0.5.6"
 ctrlc = "~3.2.3"
 int-enum = "~0.4.0"
