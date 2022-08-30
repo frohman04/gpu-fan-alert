@@ -1,6 +1,5 @@
 #![forbid(unsafe_code)]
 
-extern crate ansi_term;
 extern crate anyhow;
 extern crate ati_adl_sys;
 extern crate cpal;
@@ -8,6 +7,7 @@ extern crate crossbeam_channel;
 extern crate ctrlc;
 #[macro_use]
 extern crate int_enum;
+extern crate nu_ansi_term;
 extern crate sysinfo;
 extern crate tracing;
 extern crate tracing_appender;
@@ -24,7 +24,7 @@ use tracing_subscriber::prelude::*;
 use tracing_subscriber::{fmt, Registry};
 
 fn main() -> anyhow::Result<()> {
-    let ansi_enabled = ansi_term::enable_ansi_support().map_or(false, |()| true);
+    let ansi_enabled = nu_ansi_term::enable_ansi_support().map_or(false, |()| true);
 
     let file_appender = tracing_appender::rolling::hourly("./logs", "log");
     let (file_writer, _guard) = tracing_appender::non_blocking(file_appender);
