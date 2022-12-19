@@ -6,7 +6,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "~1.0.66"
+anyhow = "~1.0.68"
 cpal = "~0.14.2"
 crossbeam-channel = "~0.5.6"
 ctrlc = "~3.2.3"
